@@ -43,4 +43,22 @@ class TDLambdaEvaluator(AbstractEvaluator):
 
         :param policy: A policy object that provides action probabilities for each state.
         """
-        pass
+        state = self.env.reset()  
+        self.eligibility_traces.fill(0)  
+        end = False
+
+        while not end:
+            action = policy.sample_action(state)
+            next_state, reward, end = self.env.step(action)
+
+            td_target = reward + self.env.discount_factor * self.value_fun[next_state]  
+            td_error = td_target - self.value_fun[state]  
+
+            self.eligibility_traces[state] += 1  
+
+            for s in range(self.env.num_states):
+                self.value_fun[s] = self.value_fun[s] + self.alpha * td_error * self.eligibility_traces[s]
+
+            self.eligibility_traces = self.env.discount_factor * self.lambd * self.eligibility_traces
+            
+            state = next_state
